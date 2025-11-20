@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-Time World Timezone Clock Widget Suite</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Header -->
@@ -53,6 +53,33 @@
         </div>
     </main>
 
+    
+    <!-- Add Timezone Modal -->
+    <div id="timezoneModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Timezone</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="searchInput">Search Timezone</label>
+                    <input type="text" id="searchInput" placeholder="Search by city or timezone..." class="input">
+                </div>
+                <div class="form-group">
+                    <label for="timezoneSelect">Select Timezone</label>
+                    <select id="timezoneSelect" class="select">
+                        <option value="">Choose a timezone</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="customLabel">Custom Label (Optional)</label>
+                    <input type="text" id="customLabel" placeholder="e.g., Home, Office, Client" class="input">
+                </div>
+                <button id="addTimezoneSubmit" class="btn-primary btn-full">Add Timezone</button>
+            </div>
+        </div>
+    </div>
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
