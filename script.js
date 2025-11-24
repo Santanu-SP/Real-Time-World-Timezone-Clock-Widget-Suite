@@ -247,12 +247,23 @@ let addTimezoneSubmit;
             const hours = localTime.getHours();
             const minutes = localTime.getMinutes();
             const seconds = localTime.getSeconds();
+            const timeOfDay = getTimeOfDay(hours);
+            const offset = getTimezoneOffset(tz.timezone);
 
             // Display time in 24-hour format
             const time24 = localTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
             
             card.innerHTML = `
-                <div class="clock-header"><h3>${tz.label}</h3></div>
+                <div class="clock-header">
+                    <h3>${tz.label}</h3>
+                    <span class="timezone-offset">${offset}</span>
+                </div>
+                <div class="time-of-day ${timeOfDay.className}">
+                    <svg class="time-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        ${getIconSVG(timeOfDay.icon)}
+                    </svg>
+                    <span>${timeOfDay.label}</span>
+                </div>
                 <div class="clock-display">
                     <div class="digital-clock time-24">${time24}</div>
                     <div class="analog-clock hidden">

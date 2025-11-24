@@ -219,11 +219,23 @@ h1 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: rgba(71, 85, 105, 0.2);
+    border-radius: 0.375rem;
 }
 
 .time-of-day svg {
-    width: 1rem;
-    height: 1rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+.time-of-day svg line,
+.time-of-day svg path,
+.time-of-day svg circle,
+.time-of-day svg polyline {
+    stroke: currentColor;
 }
 
 .time-of-day.morning svg { color: #facc15; }
