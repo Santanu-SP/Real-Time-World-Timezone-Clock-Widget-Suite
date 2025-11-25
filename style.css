@@ -564,3 +564,52 @@ h1 {
         margin-bottom: 1rem;
     }
 }
+
+/* Weather Styles */
+.weather-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.weather-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.weather-temp {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.help-text a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.help-text a:hover {
+    text-decoration: underline;
+}
+
+.weather-error {
+    color: var(--danger-color);
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+.weather-loading {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-style: italic;
+}

@@ -3,7 +3,7 @@ const popularTimezones = [
     { id: '2', timezone: 'Europe/London', label: 'London' },
     { id: '3', timezone: 'Asia/Tokyo', label: 'Tokyo' },
     { id: '4', timezone: 'Australia/Sydney', label: 'Sydney' },
-    { id: '5', timezone: 'Asia/Kolkata', label: 'Mumbai' },
+    { id: '5', timezone: 'Asia/Kolkata', label: 'Bengaluru' },
     { id: '6', timezone: 'America/Chicago', label: 'Chicago' },
     { id: '7', timezone: 'America/Denver', label: 'Denver' },
     { id: '8', timezone: 'America/Los_Angeles', label: 'Los Angeles' },
@@ -128,6 +128,10 @@ let timeOffsetLabel;
 let resetTimeBtn;
 let globalOffset = 0; // Hours
 
+// Weather API
+const weatherApiKey = CONFIG.WEATHER_API_KEY;
+const weatherCache = {}; // Simple cache to prevent excessive API calls
+
 // Theme management
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -156,6 +160,63 @@ function updateThemeIcon(isLight) {
         moonIcon.classList.remove('hidden');
         sunIcon.classList.add('hidden');
     }
+}
+
+// Fetch weather data
+async function fetchWeather(city, elementId) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+
+    if (!weatherApiKey || weatherApiKey === 'YOUR_API_KEY') {
+        container.innerHTML = '<span class="weather-error">Configure API Key in config.js</span>';
+        return;
+    }
+
+    // Check cache (valid for 10 minutes)
+    const now = Date.now();
+    if (weatherCache[city] && (now - weatherCache[city].timestamp < 600000)) {
+        updateWeatherUI(elementId, weatherCache[city].data);
+        return;
+    }
+
+    try {
+        // Show loading state
+        container.innerHTML = '<span class="weather-loading">Loading weather...</span>';
+
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${weatherApiKey}`);
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Invalid API Key');
+            } else if (response.status === 404) {
+                throw new Error('City not found');
+            }
+            throw new Error('Weather fetch failed');
+        }
+
+        const data = await response.json();
+        weatherCache[city] = {
+            timestamp: now,
+            data: data
+        };
+        updateWeatherUI(elementId, data);
+    } catch (error) {
+        console.error('Error fetching weather:', error);
+        container.innerHTML = `<span class="weather-error">${error.message}</span>`;
+    }
+}
+
+function updateWeatherUI(elementId, data) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+
+    const iconUrl = `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`;
+    const temp = Math.round(data.main.temp);
+
+    container.innerHTML = `
+        <img src="${iconUrl}" alt="${data.weather[0].description}" class="weather-icon">
+        <span class="weather-temp">${temp}°C</span>
+        <span class="weather-desc">${data.weather[0].main}</span>
+    `;
 }
 
 function getTimeInTimezone(timezone) {
@@ -299,6 +360,11 @@ function createClockCard(tz) {
     // Display time in 24-hour format
     const time24 = localTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
+    // Extract city name from timezone for more robust weather query
+    // e.g., "America/New_York" -> "New York", "Asia/Kolkata" -> "Kolkata"
+    const cityFromTimezone = tz.timezone.split('/').pop().replace(/_/g, ' ');
+    const weatherId = `weather-${tz.id}`;
+
     card.innerHTML = `
                 <div class="clock-header">
                     <h3>${tz.label}</h3>
@@ -316,11 +382,19 @@ function createClockCard(tz) {
                         ${createAnalogClockSVG(hours, minutes, seconds)}
                     </div>
                 </div>
+                <div id="${weatherId}" class="weather-display">
+                    <!-- Weather will be loaded here -->
+                </div>
                 <div class="card-actions">
                     <button class="btn-secondary toggle-clock-btn" onclick="toggleClockView('${tz.id}')">Show Analog</button>
                     <button class="btn-danger" onclick="removeTimezone('${tz.id}')">Remove</button>
                 </div>
             `;
+
+    // Store city query on the card for later use if needed, or just return it
+    card.dataset.city = cityFromTimezone;
+    card.dataset.weatherId = weatherId;
+
     return card;
 }
 
@@ -347,6 +421,11 @@ function renderClocks() {
         console.log('Creating card for:', tz.label);
         const card = createClockCard(tz);
         clocksContainer.appendChild(card);
+
+        // Fetch weather AFTER appending to DOM so getElementById works
+        if (card.dataset.city && card.dataset.weatherId) {
+            fetchWeather(card.dataset.city, card.dataset.weatherId);
+        }
     });
 
     console.log('renderClocks finished, cards rendered:', clocksContainer.children.length);
@@ -492,6 +571,7 @@ function init() {
     timeTravelSlider = document.getElementById('timeTravelSlider');
     timeOffsetLabel = document.getElementById('timeOffsetLabel');
     resetTimeBtn = document.getElementById('resetTimeBtn');
+
 
     console.log('DOM elements initialized:', {
         clocksContainer: !!clocksContainer,
