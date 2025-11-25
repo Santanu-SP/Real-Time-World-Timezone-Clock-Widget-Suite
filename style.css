@@ -4,11 +4,46 @@
     box-sizing: border-box;
 }
 
+:root {
+    /* Dark Mode (Default) */
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --accent-color: #60a5fa;
+    --border-color: rgba(71, 85, 105, 0.5);
+    --card-bg: rgba(30, 41, 59, 0.5);
+    --card-hover: rgba(30, 41, 59, 0.7);
+    --header-bg: rgba(15, 23, 42, 0.5);
+    --input-bg: #334155;
+    --modal-bg: #1e293b;
+    --btn-secondary-bg: rgba(71, 85, 105, 0.5);
+    --btn-secondary-hover: rgba(71, 85, 105, 0.7);
+}
+
+.light-mode {
+    /* Light Mode */
+    --bg-primary: #f1f5f9;
+    --bg-secondary: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent-color: #2563eb;
+    --border-color: #cbd5e1;
+    --card-bg: rgba(255, 255, 255, 0.7);
+    --card-hover: rgba(255, 255, 255, 0.9);
+    --header-bg: rgba(255, 255, 255, 0.8);
+    --input-bg: #f8fafc;
+    --modal-bg: #ffffff;
+    --btn-secondary-bg: #e2e8f0;
+    --btn-secondary-hover: #cbd5e1;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    background: var(--bg-primary);
     min-height: 100vh;
-    color: #e2e8f0;
+    color: var(--text-primary);
+    transition: background 0.3s, color 0.3s;
 }
 
 .container {
@@ -19,8 +54,8 @@ body {
 
 /* Header */
 .header {
-    border-bottom: 1px solid rgba(71, 85, 105, 0.5);
-    background: rgba(15, 23, 42, 0.5);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--header-bg);
     backdrop-filter: blur(12px);
 }
 
@@ -44,11 +79,11 @@ body {
 }
 
 .icon-globe {
-    color: #60a5fa;
+    color: var(--accent-color);
 }
 
 .icon-clock {
-    color: #60a5fa;
+    color: var(--accent-color);
     position: absolute;
     bottom: -4px;
     right: -4px;
@@ -57,13 +92,13 @@ body {
 h1 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 0.25rem;
 }
 
 .subtitle {
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 /* Buttons */
@@ -91,8 +126,8 @@ h1 {
 }
 
 .btn-secondary {
-    background: rgba(71, 85, 105, 0.5);
-    color: #94a3b8;
+    background: var(--btn-secondary-bg);
+    color: var(--text-secondary);
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 0.375rem;
@@ -102,14 +137,14 @@ h1 {
 }
 
 .btn-secondary:hover {
-    background: rgba(71, 85, 105, 0.7);
-    color: #ffffff;
+    background: var(--btn-secondary-hover);
+    color: var(--text-primary);
 }
 
 .btn-icon {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 0.375rem;
@@ -138,8 +173,8 @@ h1 {
 
 /* Clock Card */
 .clock-card {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(71, 85, 105, 0.5);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     padding: 1.5rem;
     backdrop-filter: blur(12px);
@@ -147,7 +182,7 @@ h1 {
 }
 
 .clock-card:hover {
-    background: rgba(30, 41, 59, 0.7);
+    background: var(--card-hover);
 }
 
 .clock-header {
@@ -163,13 +198,13 @@ h1 {
 
 .clock-title h3 {
     font-size: 1.125rem;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 0.25rem;
 }
 
 .clock-title p {
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 .clock-display {
@@ -183,14 +218,14 @@ h1 {
 .time-24 {
     font-size: 2.25rem;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 0.25rem;
     font-variant-numeric: tabular-nums;
 }
 
 .time-12 {
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 .analog-clock {
@@ -201,11 +236,11 @@ h1 {
 
 .clock-date {
     font-size: 0.875rem;
-    color: #cbd5e1;
+    color: var(--text-secondary);
     text-align: center;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(71, 85, 105, 0.5);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .clock-info {
@@ -219,21 +254,44 @@ h1 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: rgba(71, 85, 105, 0.2);
+    border-radius: 0.375rem;
 }
 
 .time-of-day svg {
-    width: 1rem;
-    height: 1rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
 }
 
-.time-of-day.morning svg { color: #facc15; }
-.time-of-day.afternoon svg { color: #fb923c; }
-.time-of-day.evening svg { color: #a78bfa; }
-.time-of-day.night svg { color: #60a5fa; }
+.time-of-day svg line,
+.time-of-day svg path,
+.time-of-day svg circle,
+.time-of-day svg polyline {
+    stroke: currentColor;
+}
+
+.time-of-day.morning svg {
+    color: #facc15;
+}
+
+.time-of-day.afternoon svg {
+    color: #fb923c;
+}
+
+.time-of-day.evening svg {
+    color: #a78bfa;
+}
+
+.time-of-day.night svg {
+    color: #60a5fa;
+}
 
 .time-of-day span {
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 .badge {
@@ -247,8 +305,9 @@ h1 {
 
 .clock-toggle {
     padding-top: 1rem;
-    border-top: 1px solid rgba(71, 85, 105, 0.5);
+    border-top: 1px solid var(--border-color);
 }
+
 /* Empty State */
 .empty-state {
     text-align: center;
@@ -267,18 +326,18 @@ h1 {
 
 .empty-state h2 {
     font-size: 1.25rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
     margin-bottom: 0.5rem;
 }
 
 .empty-state p {
     font-size: 0.875rem;
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 /* Footer */
 .footer {
-    border-top: 1px solid rgba(71, 85, 105, 0.5);
+    border-top: 1px solid var(--border-color);
     margin-top: 3rem;
 }
 
@@ -289,7 +348,7 @@ h1 {
 
 .footer p {
     font-size: 0.875rem;
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 /* Modal */
@@ -311,8 +370,8 @@ h1 {
 }
 
 .modal-content {
-    background: #1e293b;
-    border: 1px solid #334155;
+    background: var(--modal-bg);
+    border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     width: 90%;
     max-width: 500px;
@@ -325,18 +384,18 @@ h1 {
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .modal-header h2 {
     font-size: 1.25rem;
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 .modal-close {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 2rem;
     cursor: pointer;
     padding: 0;
@@ -349,7 +408,7 @@ h1 {
 }
 
 .modal-close:hover {
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 .modal-body {
@@ -363,29 +422,29 @@ h1 {
 .form-group label {
     display: block;
     font-size: 0.875rem;
-    color: #e2e8f0;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
 }
 
 .input,
 .select {
     width: 100%;
-    background: #334155;
-    border: 1px solid #475569;
-    color: #ffffff;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     padding: 0.625rem;
     border-radius: 0.375rem;
     font-size: 0.875rem;
 }
 
 .input::placeholder {
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 .input:focus,
 .select:focus {
     outline: none;
-    border-color: #60a5fa;
+    border-color: var(--accent-color);
 }
 
 .select {
@@ -399,12 +458,12 @@ h1 {
         gap: 1rem;
         align-items: flex-start;
     }
-    
+
     .btn-primary {
         width: 100%;
         justify-content: center;
     }
-    
+
     .clocks-grid {
         grid-template-columns: 1fr;
     }
