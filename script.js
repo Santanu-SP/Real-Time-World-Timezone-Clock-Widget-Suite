@@ -123,6 +123,10 @@ let searchInput;
 let customLabel;
 let addTimezoneSubmit;
 let themeToggleBtn;
+let timeTravelSlider;
+let timeOffsetLabel;
+let resetTimeBtn;
+let globalOffset = 0; // Hours
 
 // Theme management
 function initTheme() {
@@ -156,9 +160,15 @@ function updateThemeIcon(isLight) {
 
 function getTimeInTimezone(timezone) {
     try {
-        // We use Intl.DateTimeFormat to ensure we get the time adjusted 
+        // We use Intl.DateTimeFormat to ensure we get the time adjusted
         // for the specified timezone.
         const now = new Date();
+
+        // Apply time travel offset
+        if (globalOffset !== 0) {
+            now.setTime(now.getTime() + (globalOffset * 3600000));
+        }
+
         const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: timezone,
             year: 'numeric',
@@ -189,6 +199,11 @@ function getTimeInTimezone(timezone) {
 function getTimezoneOffset(timezone) {
     try {
         const now = new Date();
+        // Apply time travel offset for correct offset calculation (e.g. DST changes)
+        if (globalOffset !== 0) {
+            now.setTime(now.getTime() + (globalOffset * 3600000));
+        }
+
         const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: timezone,
             timeZoneName: 'short'
@@ -474,6 +489,9 @@ function init() {
     customLabel = document.getElementById('customLabel');
     addTimezoneSubmit = document.getElementById('addTimezoneSubmit');
     themeToggleBtn = document.getElementById('themeToggleBtn');
+    timeTravelSlider = document.getElementById('timeTravelSlider');
+    timeOffsetLabel = document.getElementById('timeOffsetLabel');
+    resetTimeBtn = document.getElementById('resetTimeBtn');
 
     console.log('DOM elements initialized:', {
         clocksContainer: !!clocksContainer,
@@ -496,6 +514,21 @@ function init() {
     searchInput.addEventListener('input', filterTimezones);
     addTimezoneSubmit.addEventListener('click', addTimezone);
     themeToggleBtn.addEventListener('click', toggleTheme);
+
+    // Time travel listeners
+    timeTravelSlider.addEventListener('input', (e) => {
+        globalOffset = parseInt(e.target.value);
+        const sign = globalOffset >= 0 ? '+' : '';
+        timeOffsetLabel.textContent = `${sign}${globalOffset}h`;
+        updateAllClocks();
+    });
+
+    resetTimeBtn.addEventListener('click', () => {
+        globalOffset = 0;
+        timeTravelSlider.value = 0;
+        timeOffsetLabel.textContent = '+0h';
+        updateAllClocks();
+    });
 
     // Render clocks and start updates
     renderClocks();
