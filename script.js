@@ -120,6 +120,7 @@ let timezoneModal;
 let closeModal;
 let timezoneSelect;
 let searchInput;
+let searchSuggestions;
 let customLabel;
 let addTimezoneSubmit;
 let themeToggleBtn;
@@ -132,6 +133,28 @@ let globalOffset = 0; // Hours
 const weatherApiKey = CONFIG.WEATHER_API_KEY;
 const weatherCache = {}; // Simple cache to prevent excessive API calls
 
+// Persistence
+function saveSettings() {
+    localStorage.setItem('timezones', JSON.stringify(timezones));
+    console.log('Settings saved:', timezones);
+}
+
+function loadSettings() {
+    const savedTimezones = localStorage.getItem('timezones');
+    if (savedTimezones) {
+        try {
+            timezones = JSON.parse(savedTimezones);
+            console.log('Settings loaded:', timezones);
+        } catch (e) {
+            console.error('Error parsing saved timezones:', e);
+            timezones = [...defaultTimezones];
+        }
+    } else {
+        timezones = [...defaultTimezones];
+        console.log('No saved settings, using defaults');
+    }
+}
+
 // Theme management
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -143,10 +166,61 @@ function initTheme() {
     }
 }
 
-function toggleTheme() {
-    const isLight = document.body.classList.toggle('light-mode');
-    localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    updateThemeIcon(isLight);
+function toggleTheme(event) {
+    // If body has light-mode, we are in light mode. Toggling removes it (dark).
+    // If body doesn't have light-mode, we are in dark mode. Toggling adds it (light).
+
+    // Check if View Transitions API is supported
+    if (!document.startViewTransition) {
+        document.body.classList.toggle('light-mode');
+        updateThemeIcon();
+
+        // Save preference
+        const isLight = document.body.classList.contains('light-mode');
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        return;
+    }
+
+    // Get click position or center of screen
+    const x = event ? event.clientX : window.innerWidth / 2;
+    const y = event ? event.clientY : window.innerHeight / 2;
+
+    // Calculate distance to furthest corner
+    const endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = document.startViewTransition(() => {
+        document.body.classList.toggle('light-mode');
+        updateThemeIcon();
+    });
+
+    transition.ready.then(() => {
+        const isLight = document.body.classList.contains('light-mode');
+
+        // Animate the clip-path
+        document.documentElement.animate(
+            {
+                clipPath: [
+                    `circle(0px at ${x}px ${y}px)`,
+                    `circle(${endRadius}px at ${x}px ${y}px)`
+                ]
+            },
+            {
+                duration: 500,
+                easing: 'ease-in',
+                pseudoElement: isLight ? '::view-transition-new(root)' : '::view-transition-old(root)'
+            }
+        );
+    });
+
+    // Save preference
+    // The transition callback runs synchronously for the DOM update.
+    // So checking outside is fine, but we need to be careful about the order.
+    // Let's just re-check the class list.
+    const currentTheme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+    localStorage.setItem('theme', currentTheme);
 }
 
 function updateThemeIcon(isLight) {
@@ -474,6 +548,43 @@ function filterTimezones() {
             option.style.display = 'none';
         }
     });
+
+    // Handle Suggestions
+    searchSuggestions.innerHTML = '';
+    if (query.length === 0) {
+        searchSuggestions.classList.add('hidden');
+        return;
+    }
+
+    const matches = popularTimezones.filter(tz =>
+        tz.label.toLowerCase().includes(query) ||
+        tz.timezone.toLowerCase().includes(query)
+    );
+
+    if (matches.length > 0) {
+        matches.forEach(tz => {
+            const li = document.createElement('li');
+            li.textContent = tz.label;
+            li.addEventListener('click', () => {
+                selectSuggestion(tz);
+            });
+            searchSuggestions.appendChild(li);
+        });
+        searchSuggestions.classList.remove('hidden');
+    } else {
+        const li = document.createElement('li');
+        li.textContent = 'No results found';
+        li.className = 'no-results';
+        searchSuggestions.appendChild(li);
+        searchSuggestions.classList.remove('hidden');
+    }
+}
+
+function selectSuggestion(tz) {
+    timezoneSelect.value = tz.timezone;
+    searchInput.value = tz.label;
+    searchSuggestions.classList.add('hidden');
+    // Trigger change event if needed, or just let the user click Add
 }
 
 // Add timezone
@@ -495,8 +606,19 @@ function addTimezone() {
 
     timezones.push(newTimezone);
     console.log('Timezone added:', newTimezone);
+    saveSettings();
     renderClocks();
     closeModalHandler();
+}
+
+// Reset to default settings
+function resetToDefault() {
+    if (confirm('Are you sure you want to reset to default settings? This will clear all your custom timezones.')) {
+        localStorage.removeItem('timezones');
+        timezones = [...defaultTimezones];
+        console.log('Reset to defaults');
+        renderClocks();
+    }
 }
 
 /**
@@ -565,12 +687,14 @@ function init() {
     closeModal = document.getElementById('closeModal');
     timezoneSelect = document.getElementById('timezoneSelect');
     searchInput = document.getElementById('searchInput');
+    searchSuggestions = document.getElementById('searchSuggestions');
     customLabel = document.getElementById('customLabel');
     addTimezoneSubmit = document.getElementById('addTimezoneSubmit');
     themeToggleBtn = document.getElementById('themeToggleBtn');
     timeTravelSlider = document.getElementById('timeTravelSlider');
     timeOffsetLabel = document.getElementById('timeOffsetLabel');
     resetTimeBtn = document.getElementById('resetTimeBtn');
+    const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
 
 
     console.log('DOM elements initialized:', {
@@ -582,6 +706,9 @@ function init() {
     // Populate timezone select dropdown
     populateTimezoneSelect();
 
+    // Load saved settings
+    loadSettings();
+
     // Initialize theme
     initTheme();
 
@@ -591,7 +718,19 @@ function init() {
     timezoneModal.addEventListener('click', (e) => {
         if (e.target === timezoneModal) closeModalHandler();
     });
+    searchSuggestions.classList.add('hidden');
+
     searchInput.addEventListener('input', filterTimezones);
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (e.target !== searchInput && e.target !== searchSuggestions) {
+            if (searchSuggestions && !searchSuggestions.classList.contains('hidden')) {
+                searchSuggestions.classList.add('hidden');
+            }
+        }
+    });
+
     addTimezoneSubmit.addEventListener('click', addTimezone);
     themeToggleBtn.addEventListener('click', toggleTheme);
 
@@ -609,6 +748,10 @@ function init() {
         timeOffsetLabel.textContent = '+0h';
         updateAllClocks();
     });
+
+    if (resetDefaultsBtn) {
+        resetDefaultsBtn.addEventListener('click', resetToDefault);
+    }
 
     // Render clocks and start updates
     renderClocks();
@@ -648,5 +791,6 @@ function toggleClockView(id) {
 }
 function removeTimezone(id) {
     timezones = timezones.filter(tz => tz.id !== id);
+    saveSettings();
     renderClocks();
 }
