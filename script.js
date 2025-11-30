@@ -3,7 +3,7 @@ const popularTimezones = [
     { id: '2', timezone: 'Europe/London', label: 'London' },
     { id: '3', timezone: 'Asia/Tokyo', label: 'Tokyo' },
     { id: '4', timezone: 'Australia/Sydney', label: 'Sydney' },
-    { id: '5', timezone: 'Asia/Kolkata', label: 'Mumbai' },
+    { id: '5', timezone: 'Asia/Kolkata', label: 'Bengaluru' },
     { id: '6', timezone: 'America/Chicago', label: 'Chicago' },
     { id: '7', timezone: 'America/Denver', label: 'Denver' },
     { id: '8', timezone: 'America/Los_Angeles', label: 'Los Angeles' },
@@ -120,9 +120,40 @@ let timezoneModal;
 let closeModal;
 let timezoneSelect;
 let searchInput;
+let searchSuggestions;
 let customLabel;
 let addTimezoneSubmit;
 let themeToggleBtn;
+let timeTravelSlider;
+let timeOffsetLabel;
+let resetTimeBtn;
+let globalOffset = 0; // Hours
+
+// Weather API
+const weatherApiKey = CONFIG.WEATHER_API_KEY;
+const weatherCache = {}; // Simple cache to prevent excessive API calls
+
+// Persistence
+function saveSettings() {
+    localStorage.setItem('timezones', JSON.stringify(timezones));
+    console.log('Settings saved:', timezones);
+}
+
+function loadSettings() {
+    const savedTimezones = localStorage.getItem('timezones');
+    if (savedTimezones) {
+        try {
+            timezones = JSON.parse(savedTimezones);
+            console.log('Settings loaded:', timezones);
+        } catch (e) {
+            console.error('Error parsing saved timezones:', e);
+            timezones = [...defaultTimezones];
+        }
+    } else {
+        timezones = [...defaultTimezones];
+        console.log('No saved settings, using defaults');
+    }
+}
 
 // Theme management
 function initTheme() {
@@ -135,10 +166,61 @@ function initTheme() {
     }
 }
 
-function toggleTheme() {
-    const isLight = document.body.classList.toggle('light-mode');
-    localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    updateThemeIcon(isLight);
+function toggleTheme(event) {
+    // If body has light-mode, we are in light mode. Toggling removes it (dark).
+    // If body doesn't have light-mode, we are in dark mode. Toggling adds it (light).
+
+    // Check if View Transitions API is supported
+    if (!document.startViewTransition) {
+        document.body.classList.toggle('light-mode');
+        updateThemeIcon();
+
+        // Save preference
+        const isLight = document.body.classList.contains('light-mode');
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        return;
+    }
+
+    // Get click position or center of screen
+    const x = event ? event.clientX : window.innerWidth / 2;
+    const y = event ? event.clientY : window.innerHeight / 2;
+
+    // Calculate distance to furthest corner
+    const endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = document.startViewTransition(() => {
+        document.body.classList.toggle('light-mode');
+        updateThemeIcon();
+    });
+
+    transition.ready.then(() => {
+        const isLight = document.body.classList.contains('light-mode');
+
+        // Animate the clip-path
+        document.documentElement.animate(
+            {
+                clipPath: [
+                    `circle(0px at ${x}px ${y}px)`,
+                    `circle(${endRadius}px at ${x}px ${y}px)`
+                ]
+            },
+            {
+                duration: 500,
+                easing: 'ease-in',
+                pseudoElement: isLight ? '::view-transition-new(root)' : '::view-transition-old(root)'
+            }
+        );
+    });
+
+    // Save preference
+    // The transition callback runs synchronously for the DOM update.
+    // So checking outside is fine, but we need to be careful about the order.
+    // Let's just re-check the class list.
+    const currentTheme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+    localStorage.setItem('theme', currentTheme);
 }
 
 function updateThemeIcon(isLight) {
@@ -154,11 +236,74 @@ function updateThemeIcon(isLight) {
     }
 }
 
+// Fetch weather data
+async function fetchWeather(city, elementId) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+
+    if (!weatherApiKey || weatherApiKey === 'YOUR_API_KEY') {
+        container.innerHTML = '<span class="weather-error">Configure API Key in config.js</span>';
+        return;
+    }
+
+    // Check cache (valid for 10 minutes)
+    const now = Date.now();
+    if (weatherCache[city] && (now - weatherCache[city].timestamp < 600000)) {
+        updateWeatherUI(elementId, weatherCache[city].data);
+        return;
+    }
+
+    try {
+        // Show loading state
+        container.innerHTML = '<span class="weather-loading">Loading weather...</span>';
+
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${weatherApiKey}`);
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Invalid API Key');
+            } else if (response.status === 404) {
+                throw new Error('City not found');
+            }
+            throw new Error('Weather fetch failed');
+        }
+
+        const data = await response.json();
+        weatherCache[city] = {
+            timestamp: now,
+            data: data
+        };
+        updateWeatherUI(elementId, data);
+    } catch (error) {
+        console.error('Error fetching weather:', error);
+        container.innerHTML = `<span class="weather-error">${error.message}</span>`;
+    }
+}
+
+function updateWeatherUI(elementId, data) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+
+    const iconUrl = `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`;
+    const temp = Math.round(data.main.temp);
+
+    container.innerHTML = `
+        <img src="${iconUrl}" alt="${data.weather[0].description}" class="weather-icon">
+        <span class="weather-temp">${temp}°C</span>
+        <span class="weather-desc">${data.weather[0].main}</span>
+    `;
+}
+
 function getTimeInTimezone(timezone) {
     try {
-        // We use Intl.DateTimeFormat to ensure we get the time adjusted 
+        // We use Intl.DateTimeFormat to ensure we get the time adjusted
         // for the specified timezone.
         const now = new Date();
+
+        // Apply time travel offset
+        if (globalOffset !== 0) {
+            now.setTime(now.getTime() + (globalOffset * 3600000));
+        }
+
         const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: timezone,
             year: 'numeric',
@@ -189,6 +334,11 @@ function getTimeInTimezone(timezone) {
 function getTimezoneOffset(timezone) {
     try {
         const now = new Date();
+        // Apply time travel offset for correct offset calculation (e.g. DST changes)
+        if (globalOffset !== 0) {
+            now.setTime(now.getTime() + (globalOffset * 3600000));
+        }
+
         const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: timezone,
             timeZoneName: 'short'
@@ -284,6 +434,19 @@ function createClockCard(tz) {
     // Display time in 24-hour format
     const time24 = localTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
+    // Extract city name from timezone for more robust weather query
+    // e.g., "America/New_York" -> "New York", "Asia/Kolkata" -> "Kolkata"
+    const cityFromTimezone = tz.timezone.split('/').pop().replace(/_/g, ' ');
+    const weatherId = `weather-${tz.id}`;
+
+    // Calculate Asia/Kolkata time and difference
+    const kolkataTime = getTimeInTimezone('Asia/Kolkata');
+    const kolkataTimeStr = kolkataTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    const diffMs = localTime.getTime() - kolkataTime.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffStr = diffHours === 0 ? 'Same time' : `${Math.abs(diffHours)} hrs ${diffHours > 0 ? 'ahead' : 'behind'}`;
+
     card.innerHTML = `
                 <div class="clock-header">
                     <h3>${tz.label}</h3>
@@ -301,11 +464,23 @@ function createClockCard(tz) {
                         ${createAnalogClockSVG(hours, minutes, seconds)}
                     </div>
                 </div>
+                <div class="kolkata-info" style="font-size: 0.85em; color: var(--text-secondary); margin-top: 8px; text-align: center;">
+                    <div>🇮🇳 India: <span class="kolkata-time">${kolkataTimeStr}</span></div>
+                    <div class="time-diff">${diffStr}</div>
+                </div>
+                <div id="${weatherId}" class="weather-display">
+                    <!-- Weather will be loaded here -->
+                </div>
                 <div class="card-actions">
                     <button class="btn-secondary toggle-clock-btn" onclick="toggleClockView('${tz.id}')">Show Analog</button>
                     <button class="btn-danger" onclick="removeTimezone('${tz.id}')">Remove</button>
                 </div>
             `;
+
+    // Store city query on the card for later use if needed, or just return it
+    card.dataset.city = cityFromTimezone;
+    card.dataset.weatherId = weatherId;
+
     return card;
 }
 
@@ -332,6 +507,11 @@ function renderClocks() {
         console.log('Creating card for:', tz.label);
         const card = createClockCard(tz);
         clocksContainer.appendChild(card);
+
+        // Fetch weather AFTER appending to DOM so getElementById works
+        if (card.dataset.city && card.dataset.weatherId) {
+            fetchWeather(card.dataset.city, card.dataset.weatherId);
+        }
     });
 
     console.log('renderClocks finished, cards rendered:', clocksContainer.children.length);
@@ -380,6 +560,43 @@ function filterTimezones() {
             option.style.display = 'none';
         }
     });
+
+    // Handle Suggestions
+    searchSuggestions.innerHTML = '';
+    if (query.length === 0) {
+        searchSuggestions.classList.add('hidden');
+        return;
+    }
+
+    const matches = popularTimezones.filter(tz =>
+        tz.label.toLowerCase().includes(query) ||
+        tz.timezone.toLowerCase().includes(query)
+    );
+
+    if (matches.length > 0) {
+        matches.forEach(tz => {
+            const li = document.createElement('li');
+            li.textContent = tz.label;
+            li.addEventListener('click', () => {
+                selectSuggestion(tz);
+            });
+            searchSuggestions.appendChild(li);
+        });
+        searchSuggestions.classList.remove('hidden');
+    } else {
+        const li = document.createElement('li');
+        li.textContent = 'No results found';
+        li.className = 'no-results';
+        searchSuggestions.appendChild(li);
+        searchSuggestions.classList.remove('hidden');
+    }
+}
+
+function selectSuggestion(tz) {
+    timezoneSelect.value = tz.timezone;
+    searchInput.value = tz.label;
+    searchSuggestions.classList.add('hidden');
+    // Trigger change event if needed, or just let the user click Add
 }
 
 // Add timezone
@@ -401,8 +618,19 @@ function addTimezone() {
 
     timezones.push(newTimezone);
     console.log('Timezone added:', newTimezone);
+    saveSettings();
     renderClocks();
     closeModalHandler();
+}
+
+// Reset to default settings
+function resetToDefault() {
+    if (confirm('Are you sure you want to reset to default settings? This will clear all your custom timezones.')) {
+        localStorage.removeItem('timezones');
+        timezones = [...defaultTimezones];
+        console.log('Reset to defaults');
+        renderClocks();
+    }
 }
 
 /**
@@ -454,6 +682,21 @@ function updateAllClocks() {
         if (analogClockEl) {
             analogClockEl.innerHTML = createAnalogClockSVG(hours, minutes, seconds);
         }
+
+        // 4. Update Kolkata time and difference
+        const kolkataTime = getTimeInTimezone('Asia/Kolkata');
+        const kolkataTimeStr = kolkataTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        const diffMs = localTime.getTime() - kolkataTime.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        // Format to 1 decimal place if needed, or keep as is if it's usually .5 or .0
+        const formattedDiff = Math.abs(diffHours) % 1 === 0 ? Math.abs(diffHours) : Math.abs(diffHours).toFixed(1);
+        const diffStr = diffHours === 0 ? 'Same time' : `${formattedDiff} hrs ${diffHours > 0 ? 'ahead' : 'behind'}`;
+
+        const kolkataTimeEl = card.querySelector('.kolkata-time');
+        const timeDiffEl = card.querySelector('.time-diff');
+        if (kolkataTimeEl) kolkataTimeEl.textContent = kolkataTimeStr;
+        if (timeDiffEl) timeDiffEl.textContent = diffStr;
     });
 }
 
@@ -471,9 +714,15 @@ function init() {
     closeModal = document.getElementById('closeModal');
     timezoneSelect = document.getElementById('timezoneSelect');
     searchInput = document.getElementById('searchInput');
+    searchSuggestions = document.getElementById('searchSuggestions');
     customLabel = document.getElementById('customLabel');
     addTimezoneSubmit = document.getElementById('addTimezoneSubmit');
     themeToggleBtn = document.getElementById('themeToggleBtn');
+    timeTravelSlider = document.getElementById('timeTravelSlider');
+    timeOffsetLabel = document.getElementById('timeOffsetLabel');
+    resetTimeBtn = document.getElementById('resetTimeBtn');
+    const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
+
 
     console.log('DOM elements initialized:', {
         clocksContainer: !!clocksContainer,
@@ -484,6 +733,9 @@ function init() {
     // Populate timezone select dropdown
     populateTimezoneSelect();
 
+    // Load saved settings
+    loadSettings();
+
     // Initialize theme
     initTheme();
 
@@ -493,9 +745,40 @@ function init() {
     timezoneModal.addEventListener('click', (e) => {
         if (e.target === timezoneModal) closeModalHandler();
     });
+    searchSuggestions.classList.add('hidden');
+
     searchInput.addEventListener('input', filterTimezones);
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (e.target !== searchInput && e.target !== searchSuggestions) {
+            if (searchSuggestions && !searchSuggestions.classList.contains('hidden')) {
+                searchSuggestions.classList.add('hidden');
+            }
+        }
+    });
+
     addTimezoneSubmit.addEventListener('click', addTimezone);
     themeToggleBtn.addEventListener('click', toggleTheme);
+
+    // Time travel listeners
+    timeTravelSlider.addEventListener('input', (e) => {
+        globalOffset = parseInt(e.target.value);
+        const sign = globalOffset >= 0 ? '+' : '';
+        timeOffsetLabel.textContent = `${sign}${globalOffset}h`;
+        updateAllClocks();
+    });
+
+    resetTimeBtn.addEventListener('click', () => {
+        globalOffset = 0;
+        timeTravelSlider.value = 0;
+        timeOffsetLabel.textContent = '+0h';
+        updateAllClocks();
+    });
+
+    if (resetDefaultsBtn) {
+        resetDefaultsBtn.addEventListener('click', resetToDefault);
+    }
 
     // Render clocks and start updates
     renderClocks();
@@ -535,5 +818,6 @@ function toggleClockView(id) {
 }
 function removeTimezone(id) {
     timezones = timezones.filter(tz => tz.id !== id);
+    saveSettings();
     renderClocks();
 }
