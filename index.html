@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-Time World Timezone Clock Widget Suite</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
@@ -13,21 +15,60 @@
             <div class="header-content">
                 <div class="header-left">
                     <div class="logo">
-                        <svg class="icon-globe" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="icon-globe" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="2" y1="12" x2="22" y2="12"></line>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                        </svg>
-                        <svg class="icon-clock" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
+                            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                            <path d="M2 12h20"></path>
+                            <path d="M12 12l4 4"></path>
+                            <path d="M12 12V8"></path>
                         </svg>
                     </div>
                     <div>
                         <h1>World Timezone Clock</h1>
-                        <p class="subtitle">Real-time global time tracking</p>
+                        <p class="subtitle">Real-time global time and weathertracking</p>
                     </div>
                 </div>
+                <div class="time-travel-container">
+                    <div class="time-travel-controls">
+                        <label for="timeTravelSlider">Time Travel</label>
+                        <span id="timeOffsetLabel">+0h</span>
+                        <button id="resetTimeBtn" class="btn-text" title="Reset to current time">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <input type="range" id="timeTravelSlider" min="-24" max="24" value="0" step="1" class="slider">
+                </div>
+                <button class="btn-secondary btn-icon" id="themeToggleBtn" aria-label="Toggle Dark/Light Mode">
+                    <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="icon-sun hidden" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+                <button id="resetDefaultsBtn" class="btn-danger btn-icon" title="Reset to Default"
+                    style="margin-right: 0.5rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                    </svg>
+                </button>
                 <button class="btn-primary" id="addTimezoneBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -53,6 +94,7 @@
         </div>
     </main>
 
+
     <!-- Add Timezone Modal -->
     <div id="timezoneModal" class="modal">
         <div class="modal-content">
@@ -63,7 +105,9 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="searchInput">Search Timezone</label>
-                    <input type="text" id="searchInput" placeholder="Search by city or timezone..." class="input">
+                    <input type="text" id="searchInput" placeholder="Search by city or timezone..." class="input"
+                        autocomplete="off">
+                    <ul id="searchSuggestions" class="suggestions-list hidden"></ul>
                 </div>
                 <div class="form-group">
                     <label for="timezoneSelect">Select Timezone</label>
@@ -83,10 +127,13 @@
             <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>Real-Time World Timezone Clock Widget Suite • Updated every second</p>
+            <p>&copy; 2024 World Timezone Clock. All rights reserved.</p>
+
         </div>
     </footer>
 
-<script src="script.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>
