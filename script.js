@@ -1,105 +1,39 @@
-const popularTimezones = [
-    { id: '1', timezone: 'America/New_York', label: 'New York' },
-    { id: '2', timezone: 'Europe/London', label: 'London' },
-    { id: '3', timezone: 'Asia/Tokyo', label: 'Tokyo' },
-    { id: '4', timezone: 'Australia/Sydney', label: 'Sydney' },
-    { id: '5', timezone: 'Asia/Kolkata', label: 'Bengaluru' },
-    { id: '6', timezone: 'America/Chicago', label: 'Chicago' },
-    { id: '7', timezone: 'America/Denver', label: 'Denver' },
-    { id: '8', timezone: 'America/Los_Angeles', label: 'Los Angeles' },
-    { id: '9', timezone: 'America/Anchorage', label: 'Anchorage' },
-    { id: '10', timezone: 'America/Halifax', label: 'Halifax' },
-    { id: '11', timezone: 'America/Phoenix', label: 'Phoenix' },
-    { id: '12', timezone: 'America/Mexico_City', label: 'Mexico City' },
-    { id: '13', timezone: 'America/Toronto', label: 'Toronto' },
-    { id: '14', timezone: 'America/Vancouver', label: 'Vancouver' },
-    { id: '15', timezone: 'America/St_Johns', label: 'St. John\'s' },
-    { id: '16', timezone: 'America/Havana', label: 'Havana, Cuba' },
-    { id: '17', timezone: 'America/Cancun', label: 'Cancún' },
-    { id: '18', timezone: 'America/Guatemala', label: 'Guatemala City' },
-    { id: '19', timezone: 'America/Costa_Rica', label: 'San José, CR' },
-    { id: '20', timezone: 'America/Jamaica', label: 'Kingston, Jamaica' },
-    { id: '21', timezone: 'America/Puerto_Rico', label: 'San Juan, Puerto Rico' },
-    { id: '22', timezone: 'America/Sao_Paulo', label: 'São Paulo' },
-    { id: '23', timezone: 'America/Buenos_Aires', label: 'Buenos Aires' },
-    { id: '24', timezone: 'America/Santiago', label: 'Santiago, Chile' },
-    { id: '25', timezone: 'America/Bogota', label: 'Bogotá, Colombia' },
-    { id: '26', timezone: 'America/Lima', label: 'Lima, Peru' },
-    { id: '27', timezone: 'America/Caracas', label: 'Caracas, Venezuela' },
-    { id: '28', timezone: 'America/La_Paz', label: 'La Paz, Bolivia' },
-    { id: '29', timezone: 'America/Asuncion', label: 'Asunción, Paraguay' },
-    { id: '30', timezone: 'America/Montevideo', label: 'Montevideo, Uruguay' },
-    { id: '31', timezone: 'America/Manaus', label: 'Manaus, Brazil' },
-    { id: '32', timezone: 'America/Rio_Branco', label: 'Rio Branco, Brazil' },
-    { id: '33', timezone: 'Atlantic/Stanley', label: 'Falkland Islands' },
-    { id: '34', timezone: 'Europe/Paris', label: 'Paris' },
-    { id: '35', timezone: 'Europe/Berlin', label: 'Berlin' },
-    { id: '36', timezone: 'Europe/Madrid', label: 'Madrid' },
-    { id: '37', timezone: 'Europe/Rome', label: 'Rome' },
-    { id: '38', timezone: 'Europe/Amsterdam', label: 'Amsterdam' },
-    { id: '39', timezone: 'Europe/Stockholm', label: 'Stockholm' },
-    { id: '40', timezone: 'Europe/Zurich', label: 'Zurich' },
-    { id: '41', timezone: 'Europe/Vienna', label: 'Vienna' },
-    { id: '42', timezone: 'Europe/Warsaw', label: 'Warsaw' },
-    { id: '43', timezone: 'Europe/Athens', label: 'Athens' },
-    { id: '44', timezone: 'Europe/Istanbul', label: 'Istanbul' },
-    { id: '45', timezone: 'Europe/Moscow', label: 'Moscow' },
-    { id: '46', timezone: 'Europe/Kiev', label: 'Kyiv, Ukraine' },
-    { id: '47', timezone: 'Europe/Helsinki', label: 'Helsinki' },
-    { id: '48', timezone: 'Europe/Dublin', label: 'Dublin' },
-    { id: '49', timezone: 'Europe/Lisbon', label: 'Lisbon' },
-    { id: '50', timezone: 'Europe/Prague', label: 'Prague' },
-    { id: '51', timezone: 'Europe/Brussels', label: 'Brussels' },
-    { id: '52', timezone: 'Europe/Oslo', label: 'Oslo' },
-    { id: '53', timezone: 'Africa/Lagos', label: 'Lagos, Nigeria' },
-    { id: '54', timezone: 'Africa/Cairo', label: 'Cairo, Egypt' },
-    { id: '55', timezone: 'Africa/Johannesburg', label: 'Johannesburg, South Africa' },
-    { id: '56', timezone: 'Africa/Nairobi', label: 'Nairobi, Kenya' },
-    { id: '57', timezone: 'Africa/Casablanca', label: 'Casablanca, Morocco' },
-    { id: '58', timezone: 'Africa/Algiers', label: 'Algiers, Algeria' },
-    { id: '59', timezone: 'Africa/Tunis', label: 'Tunis, Tunisia' },
-    { id: '60', timezone: 'Africa/Tripoli', label: 'Tripoli, Libya' },
-    { id: '61', timezone: 'Africa/Accra', label: 'Accra, Ghana' },
-    { id: '62', timezone: 'Africa/Dakar', label: 'Dakar, Senegal' },
-    { id: '63', timezone: 'Africa/Windhoek', label: 'Windhoek, Namibia' },
-    { id: '64', timezone: 'Africa/Lusaka', label: 'Lusaka, Zambia' },
-    { id: '65', timezone: 'Asia/Shanghai', label: 'Shanghai, China' },
-    { id: '66', timezone: 'Asia/Seoul', label: 'Seoul, South Korea' },
-    { id: '67', timezone: 'Asia/Dubai', label: 'Dubai, UAE' },
-    { id: '68', timezone: 'Asia/Riyadh', label: 'Riyadh, Saudi Arabia' },
-    { id: '69', timezone: 'Asia/Jerusalem', label: 'Jerusalem, Israel' },
-    { id: '70', timezone: 'Asia/Bangkok', label: 'Bangkok, Thailand' },
-    { id: '71', timezone: 'Asia/Singapore', label: 'Singapore' },
-    { id: '72', timezone: 'Asia/Jakarta', label: 'Jakarta, Indonesia' },
-    { id: '73', timezone: 'Asia/Manila', label: 'Manila, Philippines' },
-    { id: '74', timezone: 'Asia/Karachi', label: 'Karachi, Pakistan' },
-    { id: '75', timezone: 'Asia/Tashkent', label: 'Tashkent, Uzbekistan' },
-    { id: '76', timezone: 'Asia/Tehran', label: 'Tehran, Iran' },
-    { id: '77', timezone: 'Asia/Dhaka', label: 'Dhaka, Bangladesh' },
-    { id: '78', timezone: 'Asia/Hong_Kong', label: 'Hong Kong' },
-    { id: '79', timezone: 'Asia/Kuala_Lumpur', label: 'Kuala Lumpur, Malaysia' },
-    { id: '80', timezone: 'Asia/Ho_Chi_Minh', label: 'Ho Chi Minh, Vietnam' },
-    { id: '81', timezone: 'Asia/Taipei', label: 'Taipei, Taiwan' },
-    { id: '82', timezone: 'Asia/Qatar', label: 'Doha, Qatar' },
-    { id: '83', timezone: 'Australia/Perth', label: 'Perth' },
-    { id: '84', timezone: 'Australia/Adelaide', label: 'Adelaide' },
-    { id: '85', timezone: 'Australia/Brisbane', label: 'Brisbane' },
-    { id: '86', timezone: 'Pacific/Auckland', label: 'Auckland, New Zealand' },
-    { id: '87', timezone: 'Pacific/Honolulu', label: 'Honolulu, Hawaii' },
-    { id: '88', timezone: 'Pacific/Fiji', label: 'Suva, Fiji' },
-    { id: '89', timezone: 'Pacific/Guam', label: 'Hagåtña, Guam' },
-    { id: '90', timezone: 'Pacific/Midway', label: 'Midway Atoll' },
-    { id: '91', timezone: 'Pacific/Tahiti', label: 'Tahiti' },
-    { id: '92', timezone: 'Pacific/Port_Moresby', label: 'Port Moresby, PNG' },
-    { id: '93', timezone: 'Asia/Yekaterinburg', label: 'Yekaterinburg' },
-    { id: '94', timezone: 'Asia/Novosibirsk', label: 'Novosibirsk' },
-    { id: '95', timezone: 'Asia/Vladivostok', label: 'Vladivostok' },
-    { id: '96', timezone: 'Etc/UTC', label: 'Coordinated Universal Time (UTC)' },
-    { id: '97', timezone: 'Etc/GMT', label: 'Greenwich Mean Time (GMT)' },
-    { id: '98', timezone: 'Atlantic/Reykjavik', label: 'Reykjavík, Iceland' },
-    { id: '99', timezone: 'Indian/Maldives', label: 'Maldives' },
-    { id: '100', timezone: 'Antarctica/Casey', label: 'Casey Station, Antarctica' }
-];
+let allTimezones = [];
+
+function initTimezones() {
+    if (typeof Intl !== 'undefined' && typeof Intl.supportedValuesOf === 'function') {
+        allTimezones = Intl.supportedValuesOf('timeZone').map(tz => {
+            // Format label: "America/New_York" -> "New York"
+            // Handle cases like "Etc/GMT+1" or simple "UTC" if they exist (though supportedValuesOf usually returns IANA zones)
+            const parts = tz.split('/');
+            const label = parts[parts.length - 1].replace(/_/g, ' ');
+            return {
+                timezone: tz,
+                label: `${label} (${tz})` // Include full path for clarity or just label? Let's use Label + Region for better searchability if needed, but for now simple Label is fine. Actually, let's make it "City (Region)" or just "City".
+                // The original list had "New York", "London".
+                // "America/New_York" -> "New York" is good.
+                // But "America/Argentina/Buenos_Aires" -> "Buenos Aires".
+            };
+        });
+
+        // Improve label formatting
+        allTimezones = allTimezones.map(item => {
+            const parts = item.timezone.split('/');
+            let label = parts[parts.length - 1].replace(/_/g, ' ');
+
+            // Add country/region context if it's not the first part
+            if (parts.length > 1) {
+                // e.g. "Europe/London" -> "London"
+                // "America/Argentina/Buenos_Aires" -> "Buenos Aires"
+            }
+            return { ...item, label: label };
+        });
+
+    } else {
+        console.warn('Intl.supportedValuesOf not supported, falling back to defaults');
+        allTimezones = [...defaultTimezones];
+    }
+}
 
 const defaultTimezones = [
     { id: '1', timezone: 'America/New_York', label: 'New York' },
@@ -520,7 +454,7 @@ function renderClocks() {
 // Populate timezone select dropdown
 function populateTimezoneSelect() {
     timezoneSelect.innerHTML = '<option value="">Choose a timezone</option>';
-    popularTimezones.forEach(tz => {
+    allTimezones.forEach(tz => {
         const option = document.createElement('option');
         option.value = tz.timezone;
         option.textContent = tz.label;
@@ -568,7 +502,7 @@ function filterTimezones() {
         return;
     }
 
-    const matches = popularTimezones.filter(tz =>
+    const matches = allTimezones.filter(tz =>
         tz.label.toLowerCase().includes(query) ||
         tz.timezone.toLowerCase().includes(query)
     );
@@ -607,7 +541,7 @@ function addTimezone() {
         return;
     }
 
-    const timezoneData = popularTimezones.find(tz => tz.timezone === selectedTimezone);
+    const timezoneData = allTimezones.find(tz => tz.timezone === selectedTimezone);
     const label = customLabel.value || timezoneData.label;
 
     const newTimezone = {
@@ -729,6 +663,9 @@ function init() {
         emptyState: !!emptyState,
         timezones: timezones.length
     });
+
+    // Initialize timezones
+    initTimezones();
 
     // Populate timezone select dropdown
     populateTimezoneSelect();
