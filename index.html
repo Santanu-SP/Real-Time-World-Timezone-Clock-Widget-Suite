@@ -26,7 +26,7 @@
                     </div>
                     <div>
                         <h1>World Timezone Clock</h1>
-                        <p class="subtitle">Real-time global time and weathertracking</p>
+                        <p class="subtitle">Real-time Global Time and Weather Tracking</p>
                     </div>
                 </div>
                 <div class="time-travel-container">
@@ -41,7 +41,8 @@
                             </svg>
                         </button>
                     </div>
-                    <input type="range" id="timeTravelSlider" min="-24" max="24" value="0" step="1" class="slider">
+                    <input type="range" id="timeTravelSlider" name="timeTravel" min="-24" max="24" value="0" step="1"
+                        class="slider">
                 </div>
                 <button class="btn-secondary btn-icon" id="themeToggleBtn" aria-label="Toggle Dark/Light Mode">
                     <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -105,19 +106,20 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="searchInput">Search Timezone</label>
-                    <input type="text" id="searchInput" placeholder="Search by city or timezone..." class="input"
-                        autocomplete="off">
+                    <input type="text" id="searchInput" name="search" placeholder="Search by city or timezone..."
+                        class="input" autocomplete="off">
                     <ul id="searchSuggestions" class="suggestions-list hidden"></ul>
                 </div>
                 <div class="form-group">
                     <label for="timezoneSelect">Select Timezone</label>
-                    <select id="timezoneSelect" class="select">
+                    <select id="timezoneSelect" name="timezone" class="select">
                         <option value="">Choose a timezone</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="customLabel">Custom Label (Optional)</label>
-                    <input type="text" id="customLabel" placeholder="e.g., Home, Office, Client" class="input">
+                    <input type="text" id="customLabel" name="label" placeholder="e.g., Home, Office, Client"
+                        class="input">
                 </div>
                 <button id="addTimezoneSubmit" class="btn-primary btn-full">Add Timezone</button>
             </div>
@@ -127,13 +129,19 @@
             <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 World Timezone Clock. All rights reserved.</p>
+            <p>&copy; 2025 World Timezone Clock. All rights reserved.</p>
 
         </div>
     </footer>
 
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script type="module" src="./src/main.js"></script>
+    <script type="module" src="./src/api.js"></script>
+    <script type="module" src="./src/config.js"></script>
+    <script type="module" src="./src/data.js"></script>
+    <script type="module" src="./src/state.js"></script>
+    <script type="module" src="./src/storage.js"></script>
+    <script type="module" src="./src/ui.js"></script>
+    <script type="module" src="./src/utils.js"></script>
 </body>
 
 </html>
