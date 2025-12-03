@@ -773,3 +773,145 @@ body {
 .suggestions-list li.no-results:hover {
     background-color: transparent;
 }
+
+/* Comparison / Sub-timezones */
+.comparison-section {
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.5rem;
+}
+
+.comparison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.comparison-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.comparison-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0;
+    font-weight: 500;
+}
+
+.comparison-toggle-btn:hover {
+    text-decoration: underline;
+}
+
+.comparison-reset-btn {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0;
+    font-weight: 500;
+}
+
+.comparison-reset-btn:hover {
+    text-decoration: underline;
+}
+
+.comparison-search-container {
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+.comparison-search-input {
+    width: 100%;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.comparison-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 10;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.comparison-suggestions li {
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.comparison-suggestions li:hover {
+    background: var(--bg-secondary);
+}
+
+.sub-timezone-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sub-timezone-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sub-timezone-item:last-child {
+    border-bottom: none;
+}
+
+.sub-tz-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.sub-tz-label {
+    font-weight: 500;
+}
+
+.sub-tz-meta {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.sub-tz-time {
+    font-family: monospace;
+    font-size: 0.9rem;
+    margin-right: 8px;
+}
+
+.sub-tz-remove {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 0 4px;
+}
+
+.sub-tz-remove:hover {
+    opacity: 1;
+}

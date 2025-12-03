@@ -1,34 +1,43 @@
+
 let allTimezones = [];
 
 function initTimezones() {
     if (typeof Intl !== 'undefined' && typeof Intl.supportedValuesOf === 'function') {
-        allTimezones = Intl.supportedValuesOf('timeZone').map(tz => {
-            // Format label: "America/New_York" -> "New York"
-            // Handle cases like "Etc/GMT+1" or simple "UTC" if they exist (though supportedValuesOf usually returns IANA zones)
-            const parts = tz.split('/');
-            const label = parts[parts.length - 1].replace(/_/g, ' ');
-            return {
-                timezone: tz,
-                label: `${label} (${tz})` // Include full path for clarity or just label? Let's use Label + Region for better searchability if needed, but for now simple Label is fine. Actually, let's make it "City (Region)" or just "City".
-                // The original list had "New York", "London".
-                // "America/New_York" -> "New York" is good.
-                // But "America/Argentina/Buenos_Aires" -> "Buenos Aires".
-            };
-        });
+        const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
 
-        // Improve label formatting
-        allTimezones = allTimezones.map(item => {
-            const parts = item.timezone.split('/');
+        allTimezones = Intl.supportedValuesOf('timeZone').map(tz => {
+            const parts = tz.split('/');
             let label = parts[parts.length - 1].replace(/_/g, ' ');
 
-            // Add country/region context if it's not the first part
-            if (parts.length > 1) {
-                // e.g. "Europe/London" -> "London"
-                // "America/Argentina/Buenos_Aires" -> "Buenos Aires"
+            // Get Country Name
+            let countryName = '';
+            if (typeof TIMEZONE_PER_COUNTRY !== 'undefined') {
+                for (const [code, zones] of Object.entries(TIMEZONE_PER_COUNTRY)) {
+                    if (code === 'ALL') continue;
+                    if (zones.includes(tz)) {
+                        try {
+                            countryName = regionNames.of(code);
+                        } catch (e) {
+                            countryName = code; // Fallback to code if DisplayNames fails
+                        }
+                        break;
+                    }
+                }
             }
-            return { ...item, label: label };
-        });
 
+            if (countryName) {
+                label = `${label}, ${countryName} `;
+                if (countryName === 'India') {
+                    console.log('Mapped India:', tz, label);
+                }
+            }
+
+            return {
+                timezone: tz,
+                label: label,
+                country: countryName // Store for potential separate filtering
+            };
+        });
     } else {
         console.warn('Intl.supportedValuesOf not supported, falling back to defaults');
         allTimezones = [...defaultTimezones];
@@ -415,7 +424,189 @@ function createClockCard(tz) {
     card.dataset.city = cityFromTimezone;
     card.dataset.weatherId = weatherId;
 
+    // Render comparison section
+    const comparisonSection = document.createElement('div');
+    comparisonSection.className = 'comparison-section';
+    comparisonSection.innerHTML = `
+        <div class="comparison-header">
+            <span style="font-size: 0.85rem; font-weight: 500;">Comparisons</span>
+            <div class="comparison-controls">
+                <button class="comparison-reset-btn" onclick="resetComparisonTimezones('${tz.id}')" title="Clear all comparisons">Reset</button>
+                <button class="comparison-toggle-btn" onclick="toggleComparisonSearch('${tz.id}')">+ Add</button>
+            </div>
+        </div>
+        <div id="comparison-search-${tz.id}" class="comparison-search-container hidden">
+            <input type="text" class="comparison-search-input" placeholder="Search city..." oninput="searchComparisonTimezones('${tz.id}', this.value)">
+            <ul id="comparison-suggestions-${tz.id}" class="comparison-suggestions hidden"></ul>
+        </div>
+        <ul id="sub-timezones-${tz.id}" class="sub-timezone-list"></ul>
+    `;
+    card.appendChild(comparisonSection);
+
+    // Initial render of sub-timezones if any
+    if (tz.additionalTimezones && tz.additionalTimezones.length > 0) {
+        // We need to do this after the card is in DOM or just append now? 
+        // We can't use getElementById yet because card isn't in DOM.
+        // So we'll render it manually here or call a helper after.
+        // Let's defer it to renderClocks loop.
+    }
+
     return card;
+}
+
+// --- Multi-Timezone Comparison Logic ---
+
+function toggleComparisonSearch(cardId) {
+    const searchContainer = document.getElementById(`comparison-search-${cardId}`);
+    searchContainer.classList.toggle('hidden');
+    if (!searchContainer.classList.contains('hidden')) {
+        searchContainer.querySelector('input').focus();
+    }
+}
+
+function searchComparisonTimezones(cardId, query) {
+    const suggestionsEl = document.getElementById(`comparison-suggestions-${cardId}`);
+    if (!query) {
+        suggestionsEl.classList.add('hidden');
+        return;
+    }
+
+    const matches = allTimezones.filter(tz =>
+        tz.label.toLowerCase().includes(query.toLowerCase()) ||
+        tz.timezone.toLowerCase().includes(query.toLowerCase())
+    ).slice(0, 10); // Limit to 10
+
+    suggestionsEl.innerHTML = '';
+    if (matches.length > 0) {
+        matches.forEach(match => {
+            const li = document.createElement('li');
+            li.textContent = match.label;
+            li.onclick = () => addComparisonTimezone(cardId, match);
+            suggestionsEl.appendChild(li);
+        });
+        suggestionsEl.classList.remove('hidden');
+    } else {
+        suggestionsEl.classList.add('hidden');
+    }
+}
+
+function addComparisonTimezone(cardId, timezoneObj) {
+    const cardIndex = timezones.findIndex(tz => tz.id === cardId);
+    if (cardIndex === -1) return;
+
+    if (!timezones[cardIndex].additionalTimezones) {
+        timezones[cardIndex].additionalTimezones = [];
+    }
+
+    // Prevent duplicates
+    if (timezones[cardIndex].additionalTimezones.some(t => t.timezone === timezoneObj.timezone)) {
+        alert('Timezone already added to comparison');
+        return;
+    }
+
+    timezones[cardIndex].additionalTimezones.push({
+        id: Date.now().toString(), // Sub-ID
+        timezone: timezoneObj.timezone,
+        label: timezoneObj.label
+    });
+
+    saveSettings();
+
+    // Clear search
+    const searchContainer = document.getElementById(`comparison-search-${cardId}`);
+    searchContainer.classList.add('hidden');
+    searchContainer.querySelector('input').value = '';
+    document.getElementById(`comparison-suggestions-${cardId}`).classList.add('hidden');
+
+    renderSubTimezones(cardId);
+}
+
+function removeComparisonTimezone(cardId, subId) {
+    const cardIndex = timezones.findIndex(tz => tz.id === cardId);
+    if (cardIndex === -1) return;
+
+    if (timezones[cardIndex].additionalTimezones) {
+        timezones[cardIndex].additionalTimezones = timezones[cardIndex].additionalTimezones.filter(t => t.id !== subId);
+        saveSettings();
+        renderSubTimezones(cardId);
+    }
+}
+
+function resetComparisonTimezones(cardId) {
+    const cardIndex = timezones.findIndex(tz => tz.id === cardId);
+    if (cardIndex === -1) return;
+
+    if (confirm('Remove all comparison timezones for this clock?')) {
+        timezones[cardIndex].additionalTimezones = [];
+        saveSettings();
+        renderSubTimezones(cardId);
+    }
+}
+
+function renderSubTimezones(cardId) {
+    const cardIndex = timezones.findIndex(tz => tz.id === cardId);
+    if (cardIndex === -1) return;
+
+    const container = document.getElementById(`sub-timezones-${cardId}`);
+    if (!container) return;
+
+    const subTimezones = timezones[cardIndex].additionalTimezones || [];
+    container.innerHTML = '';
+
+    subTimezones.forEach(sub => {
+        const li = document.createElement('li');
+        li.className = 'sub-timezone-item';
+        li.id = `sub-tz-${sub.id}`;
+        li.setAttribute('data-sub-id', sub.id);
+
+        // Time calculation will happen in updateAllClocks, but we need initial structure
+        li.innerHTML = `
+            <div class="sub-tz-info">
+                <span class="sub-tz-label">${sub.label.split('(')[0].trim()}</span>
+                <span class="sub-tz-meta">Loading...</span>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <span class="sub-tz-time">--:--</span>
+                <button class="sub-tz-remove" onclick="removeComparisonTimezone('${cardId}', '${sub.id}')">&times;</button>
+            </div>
+        `;
+        container.appendChild(li);
+    });
+
+    // Trigger an immediate update for this card's sub-clocks
+    // We need to find the card element first
+    const card = document.querySelector(`.clock-card[data-id="${cardId}"]`);
+    if (card) {
+        updateSubClocks(timezones[cardIndex], card);
+    }
+}
+
+function updateSubClocks(mainTz, card) {
+    if (!mainTz.additionalTimezones || mainTz.additionalTimezones.length === 0) return;
+
+    const mainTime = getTimeInTimezone(mainTz.timezone);
+
+    mainTz.additionalTimezones.forEach(sub => {
+        const subItem = document.getElementById(`sub-tz-${sub.id}`);
+        if (!subItem) return;
+
+        const subTime = getTimeInTimezone(sub.timezone);
+
+        // Time Diff relative to MAIN card timezone
+        const diffMs = subTime.getTime() - mainTime.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        const formattedDiff = Math.abs(diffHours) % 1 === 0 ? Math.abs(diffHours) : Math.abs(diffHours).toFixed(1);
+        const sign = diffHours >= 0 ? '+' : '-';
+        const diffStr = diffHours === 0 ? 'Same time' : `${sign}${formattedDiff}h`;
+
+        const timeStr = subTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+        const timeEl = subItem.querySelector('.sub-tz-time');
+        const metaEl = subItem.querySelector('.sub-tz-meta');
+
+        if (timeEl) timeEl.textContent = timeStr;
+        if (metaEl) metaEl.textContent = diffStr;
+    });
 }
 
 function renderClocks() {
@@ -441,6 +632,9 @@ function renderClocks() {
         console.log('Creating card for:', tz.label);
         const card = createClockCard(tz);
         clocksContainer.appendChild(card);
+
+        // Render sub-timezones
+        renderSubTimezones(tz.id);
 
         // Fetch weather AFTER appending to DOM so getElementById works
         if (card.dataset.city && card.dataset.weatherId) {
@@ -572,65 +766,72 @@ function resetToDefault() {
  */
 function updateAllClocks() {
     timezones.forEach(tz => {
-        const card = document.querySelector(`[data-id="${tz.id}"]`);
-        if (!card) return; // Skip if card was removed
+        try {
+            const card = document.querySelector(`[data-id="${tz.id}"]`);
+            if (!card) return; // Skip if card was removed
 
-        const localTime = getTimeInTimezone(tz.timezone);
-        const hours = localTime.getHours();
-        const minutes = localTime.getMinutes();
-        const seconds = localTime.getSeconds();
+            const localTime = getTimeInTimezone(tz.timezone);
+            const hours = localTime.getHours();
+            const minutes = localTime.getMinutes();
+            const seconds = localTime.getSeconds();
 
-        const timeOfDay = getTimeOfDay(hours);
+            const timeOfDay = getTimeOfDay(hours);
 
-        // Format time strings
-        const time24 = localTime.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
+            // Format time strings
+            const time24 = localTime.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
 
-        const time12 = localTime.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
+            const time12 = localTime.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
 
-        // 1. Update digital clock text
-        const time24El = card.querySelector('.time-24');
-        const time12El = card.querySelector('.time-12');
-        if (time24El) time24El.textContent = time24;
-        if (time12El) time12El.textContent = time12;
+            // 1. Update digital clock text
+            const time24El = card.querySelector('.time-24');
+            const time12El = card.querySelector('.time-12');
+            if (time24El) time24El.textContent = time24;
+            if (time12El) time12El.textContent = time12;
 
-        // 2. Update Time of Day indicator
-        const timeOfDayEl = card.querySelector('.time-of-day');
-        if (timeOfDayEl) {
-            timeOfDayEl.className = `time-of-day ${timeOfDay.className}`;
-            timeOfDayEl.querySelector('span').textContent = timeOfDay.label;
-            timeOfDayEl.querySelector('.time-icon').innerHTML = getIconSVG(timeOfDay.icon);
+            // 2. Update Time of Day indicator
+            const timeOfDayEl = card.querySelector('.time-of-day');
+            if (timeOfDayEl) {
+                timeOfDayEl.className = `time-of-day ${timeOfDay.className}`;
+                timeOfDayEl.querySelector('span').textContent = timeOfDay.label;
+                timeOfDayEl.querySelector('.time-icon').innerHTML = getIconSVG(timeOfDay.icon);
+            }
+
+            // 3. Update analog clock SVG by regenerating its inner HTML
+            const analogClockEl = card.querySelector('.analog-clock');
+            if (analogClockEl) {
+                analogClockEl.innerHTML = createAnalogClockSVG(hours, minutes, seconds);
+            }
+
+            // 4. Update Kolkata time and difference
+            const kolkataTime = getTimeInTimezone('Asia/Kolkata');
+            const kolkataTimeStr = kolkataTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+            const diffMs = localTime.getTime() - kolkataTime.getTime();
+            const diffHours = diffMs / (1000 * 60 * 60);
+            // Format to 1 decimal place if needed, or keep as is if it's usually .5 or .0
+            const formattedDiff = Math.abs(diffHours) % 1 === 0 ? Math.abs(diffHours) : Math.abs(diffHours).toFixed(1);
+            const diffStr = diffHours === 0 ? 'Same time' : `${formattedDiff} hrs ${diffHours > 0 ? 'ahead' : 'behind'}`;
+
+            const kolkataTimeEl = card.querySelector('.kolkata-time');
+            const timeDiffEl = card.querySelector('.time-diff');
+            if (kolkataTimeEl) kolkataTimeEl.textContent = kolkataTimeStr;
+            if (timeDiffEl) timeDiffEl.textContent = diffStr;
+
+            // 5. Update Sub-clocks (Comparisons)
+            updateSubClocks(tz, card);
+        } catch (e) {
+            console.error('Error updating clock for:', tz.label, e);
         }
-
-        // 3. Update analog clock SVG by regenerating its inner HTML
-        const analogClockEl = card.querySelector('.analog-clock');
-        if (analogClockEl) {
-            analogClockEl.innerHTML = createAnalogClockSVG(hours, minutes, seconds);
-        }
-
-        // 4. Update Kolkata time and difference
-        const kolkataTime = getTimeInTimezone('Asia/Kolkata');
-        const kolkataTimeStr = kolkataTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-        const diffMs = localTime.getTime() - kolkataTime.getTime();
-        const diffHours = diffMs / (1000 * 60 * 60);
-        // Format to 1 decimal place if needed, or keep as is if it's usually .5 or .0
-        const formattedDiff = Math.abs(diffHours) % 1 === 0 ? Math.abs(diffHours) : Math.abs(diffHours).toFixed(1);
-        const diffStr = diffHours === 0 ? 'Same time' : `${formattedDiff} hrs ${diffHours > 0 ? 'ahead' : 'behind'}`;
-
-        const kolkataTimeEl = card.querySelector('.kolkata-time');
-        const timeDiffEl = card.querySelector('.time-diff');
-        if (kolkataTimeEl) kolkataTimeEl.textContent = kolkataTimeStr;
-        if (timeDiffEl) timeDiffEl.textContent = diffStr;
     });
 }
 
