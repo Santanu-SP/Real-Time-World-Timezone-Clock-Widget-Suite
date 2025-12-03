@@ -52,11 +52,7 @@ function createClockCard(tz) {
     const cityFromTimezone = tz.timezone.split('/').pop().replace(/_/g, ' ');
     const weatherId = `weather-${tz.id}`;
 
-    const kolkataTime = getTimeInTimezone('Asia/Kolkata');
-    const kolkataTimeStr = kolkataTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    const diffMs = localTime.getTime() - kolkataTime.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-    const diffStr = diffHours === 0 ? 'Same time' : `${Math.abs(diffHours)} hrs ${diffHours > 0 ? 'ahead' : 'behind'}`;
+
 
     // Note: We keep onclick handlers, but we must attach functions to window in main.js
     card.innerHTML = `
@@ -76,10 +72,7 @@ function createClockCard(tz) {
                         ${createAnalogClockSVG(hours, minutes, seconds)}
                     </div>
                 </div>
-                <div class="kolkata-info" style="font-size: 0.85em; color: var(--text-secondary); margin-top: 8px; text-align: center;">
-                    <div>🇮🇳 India: <span class="kolkata-time">${kolkataTimeStr}</span></div>
-                    <div class="time-diff">${diffStr}</div>
-                </div>
+
                 <div id="${weatherId}" class="weather-display"></div>
                 <div class="card-actions">
                     <button class="btn-secondary toggle-clock-btn" onclick="toggleClockView('${tz.id}')">Show Analog</button>
@@ -163,17 +156,9 @@ export function updateAllClocks() {
                 analogClockEl.innerHTML = createAnalogClockSVG(hours, minutes, seconds);
             }
 
-            const kolkataTime = getTimeInTimezone('Asia/Kolkata');
-            const kolkataTimeStr = kolkataTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-            const diffMs = localTime.getTime() - kolkataTime.getTime();
-            const diffHours = diffMs / (1000 * 60 * 60);
-            const formattedDiff = Math.abs(diffHours) % 1 === 0 ? Math.abs(diffHours) : Math.abs(diffHours).toFixed(1);
-            const diffStr = diffHours === 0 ? 'Same time' : `${formattedDiff} hrs ${diffHours > 0 ? 'ahead' : 'behind'}`;
 
-            const kolkataTimeEl = card.querySelector('.kolkata-time');
-            const timeDiffEl = card.querySelector('.time-diff');
-            if (kolkataTimeEl) kolkataTimeEl.textContent = kolkataTimeStr;
-            if (timeDiffEl) timeDiffEl.textContent = diffStr;
+
+
 
             updateSubClocks(tz, card);
         } catch (e) {
