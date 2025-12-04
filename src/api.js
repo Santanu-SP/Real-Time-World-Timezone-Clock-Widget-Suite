@@ -6,11 +6,6 @@ export async function fetchWeather(city, elementId) {
     const container = document.getElementById(elementId);
     if (!container) return;
 
-    if (!CONFIG.WEATHER_API_KEY || CONFIG.WEATHER_API_KEY === 'YOUR_API_KEY') {
-        container.innerHTML = '<span class="weather-error">Configure API Key</span>';
-        return;
-    }
-
     const now = Date.now();
     if (state.weatherCache[city] && (now - state.weatherCache[city].timestamp < 600000)) {
         updateWeatherUI(elementId, state.weatherCache[city].data);
@@ -19,9 +14,18 @@ export async function fetchWeather(city, elementId) {
 
     try {
         container.innerHTML = '<span class="weather-loading">Loading weather...</span>';
-        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${CONFIG.WEATHER_API_KEY}`);
+        // Use the serverless proxy
+        const response = await fetch(`/api/weather?city=${city}`);
 
-        if (!response.ok) throw new Error(response.status === 401 ? 'Invalid API Key' : 'Weather fetch failed');
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") === -1) {
+            throw new Error('Weather proxy requires Vercel deployment');
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Weather fetch failed');
+        }
 
         const data = await response.json();
         state.weatherCache[city] = { timestamp: now, data: data };
