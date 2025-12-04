@@ -1,4 +1,4 @@
-export default async function handler(request, response) {
+module.exports = async function handler(request, response) {
     const { city } = request.query;
     const apiKey = process.env.WEATHER_API_KEY;
 
@@ -23,4 +23,4 @@ export default async function handler(request, response) {
     } catch (error) {
         return response.status(500).json({ error: 'Internal Server Error' });
     }
-}
+};
